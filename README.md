@@ -14,7 +14,7 @@ Download -
 Upload - 
 
 Client
-log() - 
+log() - Seth
 FileChooser - 
 Download - Seth
 Upload - Seth
