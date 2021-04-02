@@ -5,11 +5,16 @@ Server GUI - Seth
 Client GUI - Seth
 
 Server
+Start and Stop Server - 
+log() - 
+ServerThread - 
+ClientThread - 
 FileChooser - 
 Download - 
 Upload - 
 
-CLient
+Client
+log() - 
 FileChooser - 
 Download - 
 Upload - 
