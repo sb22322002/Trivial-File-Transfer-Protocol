@@ -6,7 +6,7 @@ Client GUI - Seth
 
 TFTPConstants - Seth
 
-Server : Start and Stop Server - Seth
+Server : Start and Stop Server - 
 
 Server : log() - Seth
 
