@@ -14,7 +14,7 @@ Server : ServerThread -
 
 Server : ClientThread - 
 
-Server : FileChooser -  
+Server : FileChooser - 
 
 Client : log() - Seth
 
@@ -23,3 +23,9 @@ Client : FileChooser - Seth
 Client : Download - Seth
 
 Client : Upload - Seth
+
+Packet : buildPacket() - 
+
+Packet : parsePacket() - 
+
+Packet : readToString() - 
