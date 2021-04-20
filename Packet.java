@@ -1,9 +1,5 @@
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.net.DatagramPacket;
-import java.net.InetAddress;
+import java.io.*;
+import java.net.*;
 
 /**
  * Packet - A class to build and dissect DatagramPackets
