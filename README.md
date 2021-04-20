@@ -18,8 +18,8 @@ Server : FileChooser -
 
 Client : log() - Seth
 
-Client : FileChooser - 
+Client : FileChooser - Seth
 
-Client : Download - 
+Client : Download - Seth
 
-Client : Upload - 
+Client : Upload - Seth
