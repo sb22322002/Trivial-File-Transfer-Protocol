@@ -1,5 +1,9 @@
-import java.io.*;
-import java.net.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.net.DatagramPacket;
+import java.net.InetAddress;
 
 /**
  * Packet - A class to build and dissect DatagramPackets
@@ -277,15 +281,22 @@ public class Packet implements TFTPConstants {
     */
    private static String readToString(DataInputStream dis) throws Exception {
       String str = "";
+      byte[] bytes = null;
       
       // Infinate loop to read data byte by byte
-      while (true) {
-         int byt = dis.readByte();
+      /*for(int i=0; ; i++) {
+         bytes[i] = dis.readByte();
          
          // Break infinate loop
-         if (byt == 0)
+         if (bytes[i] == 0)
          return str;
           
+         str = new String(bytes);
+      }*/
+      while (true) {
+         int byt = dis.readByte();
+         if (byt == 0)
+         return str; 
          str = str + str;
       }
    }
