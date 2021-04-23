@@ -9,9 +9,11 @@ import javafx.scene.text.*;
 import javafx.stage.*;
 
 /**
- * TFTPClient - A Trivial File Transfer Protocol server
+ * TFTPServer - A Trivial File Transfer Protocol server
  * class to upload and download files
- * @author GHS Squad
+ * @author GHS Squad* @author H Rose
+ * @author Guiseppe Giambanco
+ * @author Seth Button-Mosher
  * version 2205
  */
 public class TFTPServer extends Application implements TFTPConstants {
@@ -181,18 +183,6 @@ public class TFTPServer extends Application implements TFTPConstants {
    }
    
    private void doWRQ() {
-      return;  
-   }
-   
-   private void doDATA() {
-      return;  
-   }
-   
-   private void doACK() {
-      return;  
-   }
-   
-   private void doERROR() {
       return;  
    }
 }
