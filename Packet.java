@@ -3,7 +3,9 @@ import java.net.*;
 
 /**
  * Packet - A class to build and dissect DatagramPackets
- * @author GHS Squad
+ * @author H Rose
+ * @author Guiseppe Giambanco
+ * @author Seth Button-Mosher
  * @version 2205
  */
 public class Packet implements TFTPConstants {
@@ -14,7 +16,7 @@ public class Packet implements TFTPConstants {
    private String s2;
    private byte[] data;
    private int dataLen;
-   private InetAddress inaPeer;
+   private InetAddress inet;
    private int port;
    
    /** Default constructor for Packet */
@@ -25,7 +27,7 @@ public class Packet implements TFTPConstants {
       s2 = null;
       data = null;
       dataLen = 0;
-      inaPeer = null;
+      inet = null;
       port = -1;
    }
    
@@ -37,17 +39,17 @@ public class Packet implements TFTPConstants {
     * @param   String         _s2
     * @param   byte[]         _data
     * @param   int            _dataLen
-    * @param   InetAddress    _inaPeer
+    * @param   InetAddress    _inet
     * @param   int            _port
     */
-   public Packet(int _opcode, int _number, String _s1, String _s2, byte[] _data, int _dataLen, InetAddress _inaPeer, int _port) {
+   public Packet(int _opcode, int _number, String _s1, String _s2, byte[] _data, int _dataLen, InetAddress _inet, int _port) {
       opcode = _opcode;
       number = _number;
       s1 = _s1;
       s2 = _s2;
       data = _data;
       dataLen = _dataLen;
-      inaPeer = _inaPeer;
+      inet = _inet;
       port = _port;
    }
    
@@ -56,7 +58,7 @@ public class Packet implements TFTPConstants {
       return opcode;
    }
    
-   /** Accessor for error code number */
+   /** Accessor for error code number/block number */
    public int getNumber() {
       return number;
    }
@@ -83,7 +85,7 @@ public class Packet implements TFTPConstants {
    
    /** Accessor for internet address */
    public InetAddress getInaPeer() {
-      return inaPeer;
+      return inet;
    }
    
    /** Accessor for port number */
@@ -119,7 +121,7 @@ public class Packet implements TFTPConstants {
                dos.close();
                
                // Create DatagramPacket
-               pkt = new DatagramPacket(baos.toByteArray(), UNDEF, (baos.toByteArray()).length, inaPeer, port);
+               pkt = new DatagramPacket(baos.toByteArray(), UNDEF, (baos.toByteArray()).length, inet, port);
             }
             // General Exception...
             catch (Exception e) {
@@ -143,7 +145,7 @@ public class Packet implements TFTPConstants {
                
                dos.close();
                // Create DatagramPacket
-               pkt = new DatagramPacket(baos.toByteArray(), UNDEF, (baos.toByteArray()).length, inaPeer, port);
+               pkt = new DatagramPacket(baos.toByteArray(), UNDEF, (baos.toByteArray()).length, inet, port);
             }
             // General Exception...
             catch (Exception e) {
@@ -166,7 +168,7 @@ public class Packet implements TFTPConstants {
                byte[] msg = baos.toByteArray();
                int msgLen = msg.length;
                // Create DatagramPacket
-               pkt = new DatagramPacket(msg, msgLen, inaPeer, port);
+               pkt = new DatagramPacket(msg, msgLen, inet, port);
             }
             // General Exception...
             catch (Exception e) {
@@ -189,7 +191,7 @@ public class Packet implements TFTPConstants {
                dos.close();
                
                // Create DatagramPacket
-               pkt = new DatagramPacket(baos.toByteArray(), 0, (baos.toByteArray()).length, inaPeer, port);
+               pkt = new DatagramPacket(baos.toByteArray(), 0, (baos.toByteArray()).length, inet, port);
             }
             // General Exception...
             catch (Exception e) {
@@ -214,18 +216,18 @@ public class Packet implements TFTPConstants {
    }
    
    /**
-    * parsePacket()
+    * dissectPacket()
     * method to dissect Packet
     * @param   DatagramPacket    pkt
     */
-   public void parsePacket(DatagramPacket pkt) {
+   public void dissectPacket(DatagramPacket pkt) {
       ByteArrayInputStream bais = new ByteArrayInputStream(pkt.getData(), pkt.getOffset(), pkt.getLength());
       DataInputStream dis = new DataInputStream(bais);
       try {
          int nread;
          // Read in packet info
          opcode = dis.readShort();
-         inaPeer = pkt.getAddress();
+         inet = pkt.getAddress();
          port = pkt.getPort();
          
          // Switch on opcode
@@ -238,7 +240,7 @@ public class Packet implements TFTPConstants {
                break;
             
             case DATA:
-               // Read in DATA packet error code number
+               // Read in DATA packet block code number
                number = dis.readShort();
                // Read in DATA packet length
                dataLen = pkt.getLength() - 4;
@@ -247,7 +249,7 @@ public class Packet implements TFTPConstants {
                break;
             
             case ACK:
-               // Read in ACK packet error code number
+               // Read in ACK packet block code number
                number = dis.readShort();
                break;
             
@@ -260,7 +262,7 @@ public class Packet implements TFTPConstants {
       }
       // General Exception...
       catch (Exception e) {
-         System.out.println("parsePacket: Unexpected exception parsing packet: " + e);
+         System.out.println("dissectPacket: Unexpected exception parsing packet: " + e);
          System.exit(3);
       }
       // Try to close DataInputStream
