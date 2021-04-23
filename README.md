@@ -26,6 +26,6 @@ Client : Upload - Seth
 
 Packet : buildPacket() - 
 
-Packet : parsePacket() - 
+Packet : dissectPacket() - 
 
 Packet : readToString() - 
