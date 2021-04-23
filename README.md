@@ -6,15 +6,15 @@ Client GUI - Seth
 
 TFTPConstants - Seth
 
-Server : Start and Stop Server - 
+Server : Start and Stop Server - Giuseppe
 
 Server : log() - Seth
 
-Server : ServerThread - 
+Server : ServerThread - Giuseppe
 
-Server : ClientThread - 
+Server : ClientThread - Giuseppe
 
-Server : FileChooser - 
+Server : FileChooser - Giuseppe
 
 Client : log() - Seth
 
