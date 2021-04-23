@@ -11,7 +11,7 @@ import javafx.stage.*;
 /**
  * TFTPServer - A Trivial File Transfer Protocol server
  * class to upload and download files
- * @author GHS Squad* @author H Rose
+ * @author H Rose
  * @author Guiseppe Giambanco
  * @author Seth Button-Mosher
  * version 2205
