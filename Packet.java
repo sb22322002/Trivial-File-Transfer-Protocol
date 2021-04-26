@@ -93,6 +93,15 @@ public class Packet implements TFTPConstants {
       return port;
    }
    
+   /** Mutator for S1 */
+   public void setS1(String s) {
+      s1 = s;
+   }
+   
+   /** Mutator for S2 */
+   public void setS2(String s) {
+      s2 = s;
+   }   
    /**
     * buildPacket()
     * method to build Packet
@@ -235,8 +244,8 @@ public class Packet implements TFTPConstants {
             case RRQ:
             case WRQ:
                // Read in RRQ/WRQ file name and mode
-               s1 = readToString(dis);
-               s2 = readToString(dis);
+               setS1(readToString(dis));
+               setS2(readToString(dis));
                break;
             
             case DATA:
@@ -283,7 +292,6 @@ public class Packet implements TFTPConstants {
     */
    private static String readToString(DataInputStream dis) throws Exception {
       String str = "";
-      byte[] bytes = null;
       
       // Infinate loop to read data byte by byte
       /*for(int i=0; ; i++) {
@@ -297,8 +305,10 @@ public class Packet implements TFTPConstants {
       }*/
       while (true) {
          int byt = dis.readByte();
-         if (byt == 0) return str; 
-         str = str + byt;
+         if (byt == 0) {
+         return str; 
+         }
+         str = str + (char) byt;
       }
    }
 }

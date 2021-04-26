@@ -222,7 +222,7 @@ public class TFTPServer extends Application implements TFTPConstants {
    // Instantiate other classes or something?? //
    
    private void doRRQ(Packet packet, DatagramSocket csocket) {
-      log("RRQ request from Client(FileName:" + packet.getS1() + " Mode:" + packet.getS2() + ")\n");
+      log("RRQ request from Client(FileName:" + packet.getS1() + " Mode:" + packet.getS2() + ")");
       //which block this is
       int blockNum = 1;
       //the size of the read in bytes
@@ -230,7 +230,7 @@ public class TFTPServer extends Application implements TFTPConstants {
       //dis
       DataInputStream dis = null;
       //hope you know what this is (hint: filename)
-      String filename = packet.getS1();
+      String filename = tfFolder.getText() + File.separator + packet.getS1();
       try {
          dis = new DataInputStream(new FileInputStream(new File(filename)));
       } 
@@ -292,7 +292,7 @@ public class TFTPServer extends Application implements TFTPConstants {
    private void doWRQ(Packet packet, DatagramSocket csocket) {
       log("WRQ request from Client(FileName:" + packet.getS1() + " Mode:" + packet.getS2() + ")");
       int blockNum = 0;
-      int size = 0;
+      int size = 512;
       int expectedNum = 1;
       DataOutputStream dos = null;
       String filename = tfFolder.getText() + File.separator + packet.getS1();
@@ -309,10 +309,13 @@ public class TFTPServer extends Application implements TFTPConstants {
          return;
       }
       while (true) {
-         Packet out = new Packet(4, blockNum, filename, null, null, 0, packet.getInaPeer(), packet.getPort()); 
+         Packet out = new Packet(4, expectedNum, filename, null, null, 0, packet.getInaPeer(), packet.getPort()); 
          DatagramPacket outPacket = out.buildPacket();
          log("Sending: " + PacketChecker.decipher(outPacket));
-         if (size > 0) {
+         try {
+         csocket.send(outPacket);
+         } catch (IOException ioe) {}
+         if (size < 512) {
             break;
          }
          DatagramPacket datagram = new DatagramPacket(new byte[1500], 1500);
@@ -333,8 +336,8 @@ public class TFTPServer extends Application implements TFTPConstants {
          if (inPacket.getOpcode() == 5) {
             return;
          }
-         else if (inPacket.getOpcode() != 3 || inPacket.getNumber() != blockNum) {
-            log("bad opcode or block num");
+         else if (inPacket.getOpcode() != 3 || inPacket.getNumber() != expectedNum) {
+            log(String.format("Bad opcode (%d != 3) or block num (%d != %d)", inPacket.getOpcode(), inPacket.getNumber(), expectedNum));
             Packet error = new Packet(5, 0, String.format("Bad opcode (%d != 4) or block num (%d != %d)", inPacket.getOpcode(), inPacket.getNumber(), blockNum), null, null, 0, packet.getInaPeer(), packet.getPort());
             DatagramPacket errordgmp = error.buildPacket();
             try {

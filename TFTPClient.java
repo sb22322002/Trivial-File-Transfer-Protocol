@@ -240,6 +240,7 @@ public class TFTPClient extends Application implements TFTPConstants {
                    * and send ERROR Packet
                    */
                   if (inContents.getOpcode() != ACK || inContents.getNumber() != blockNo) {
+                     log("Bad opcode (" + inContents.getOpcode() + "...4 expected) or block # (" + inContents.getNumber() + " -- " + blockNo + " expected) - DISCARDED");
                      Packet errContents = new Packet(ERROR, UNDEF, "Bad opcode (" + inContents.getOpcode() + "...4 expected) or block # (" + inContents.getNumber() + " -- " + blockNo + " expected) - DISCARDED", null, null, 0, inContents.getInaPeer(), inContents.getPort());
                      DatagramPacket errPkt = errContents.buildPacket();
                      log("Client sending -- " + PacketChecker.decipher(errPkt));
@@ -252,7 +253,6 @@ public class TFTPClient extends Application implements TFTPConstants {
                   if (lastSize < 512)
                   break;
                    
-                  blockNo++;
                   if (fdis == null) {
                      String fullName = local.getAbsolutePath();
                      log("doWRQ -- Opening " + fullName);
@@ -286,6 +286,7 @@ public class TFTPClient extends Application implements TFTPConstants {
                   log("Client sending -- " + PacketChecker.decipher(outPkt));
                   dgmSocket.send(outContents.buildPacket());
                   lastSize = actSize;
+                  blockNo++;
                }
             }
             // General Exception...
