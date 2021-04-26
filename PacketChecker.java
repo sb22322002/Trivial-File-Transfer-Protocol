@@ -9,6 +9,10 @@ import java.net.*;
 
 public class PacketChecker implements TFTPConstants {
 
+   /**
+      Gives us something to log when an error shows up
+      didn't implement error 3, 5, 6, 7 since the sheet says we don't need to
+   */
    public static String decipher(DatagramPacket pkt) {
       Packet packet = new Packet();
       packet.dissectPacket(pkt);

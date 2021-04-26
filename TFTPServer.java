@@ -220,16 +220,134 @@ public class TFTPServer extends Application implements TFTPConstants {
    
    // Instantiate other classes or something?? //
    
-   private void doRRQ(Packet pkt, DatagramSocket cSocket) {
-      log("RRQ request from Client(FileName:" + pkt.getS1() + " Mode:" + pkt.getS2() + ")\n");
-      return;
+   private void doRRQ(Packet packet, DatagramSocket csocket) {
+      log("RRQ request from Client(FileName:" + packet.getS1() + " Mode:" + packet.getS2() + ")\n");
+      //which block this is
+      int blockNum = 1;
+      //the size of the read in bytes
+      int size = 0;
+      //dis
+      DataInputStream dis = null;
+      //hope you know what this is (hint: filename)
+      String filename = packet.getS1();
+      try {
+         dis = new DataInputStream(new FileInputStream(new File(filename)));
+      } 
+      catch (FileNotFoundException fnfe) {
+         log("File Not Found");
+         Packet error = new Packet(5, 2, "File not found " + packet.getS1(), null, null, 0, packet.getInaPeer(), packet.getPort());
+         DatagramPacket errordgmp = error.buildPacket();
+         try {
+            csocket.send(errordgmp);
+         } catch (IOException ioe) {}
+         return;
+      }
+      while (size > 0) {
+         byte[] block = new byte[512];
+         size = 0;
+         try {
+            size = dis.read(block);
+         }
+         catch (IOException ioe) {
+            log("IOException from reading");
+         }
+         Packet outPack = new Packet(3, blockNum, null, null, block, size, packet.getInaPeer(), packet.getPort());
+         DatagramPacket outPacket = outPack.buildPacket();
+         try {
+            csocket.send(outPacket);
+         }
+         catch (IOException ioe) {
+            log("Error sending RRQ");
+         }
+         log("sending" + PacketChecker.decipher(outPacket));
+         DatagramPacket datagram = new DatagramPacket(new byte[1500], 1500);
+         try {
+            csocket.receive(datagram);
+         }
+         catch (IOException ioe) {
+            log(ioe.toString());
+         }
+         log("Received -- " + PacketChecker.decipher(datagram));
+         Packet inPacket = new Packet();
+         inPacket.dissectPacket(datagram);
+         if (inPacket.getOpcode() != 4 || blockNum != inPacket.getNumber()) {
+            log("bad opcode or block num");
+            Packet error = new Packet(5, 0, String.format("Bad opcode (%d != 4) or block num (%d != %d)", inPacket.getOpcode(), inPacket.getNumber(), blockNum), null, null, 0, packet.getInaPeer(), packet.getPort());
+            DatagramPacket errordgmp = error.buildPacket();
+            try {
+               csocket.send(errordgmp);
+            } catch (IOException ioe) {}
+            return;
+         }
+         blockNum++;
+         try {
+            dis.close();
+            csocket.close();
+         } catch (IOException ioe) {}
+      }
+      
    }
    
-   private void doWRQ(Packet pkt, DatagramSocket cSocket) {
-      log("WRQ request from Client(FileName:" + pkt.getS1() + " Mode:" + pkt.getS2() + ")\n");
-      return;  
+   private void doWRQ(Packet packet, DatagramSocket csocket) {
+      log("WRQ request from Client(FileName:" + packet.getS1() + " Mode:" + packet.getS2() + ")\n");
+      int blockNum = 0;
+      int size = 0;
+      int expectedNum = 1;
+      DataOutputStream dos = null;
+      String filename = packet.getS1();
+      try {
+         dos = new DataOutputStream(new FileOutputStream(new File(filename)));
+      } 
+      catch (FileNotFoundException fnfe) {
+         log("File Not Found");
+         Packet error = new Packet(5, 2, "File not found " + packet.getS1(), null, null, 0, packet.getInaPeer(), packet.getPort());
+         DatagramPacket errordgmp = error.buildPacket();
+         try {
+            csocket.send(errordgmp);
+         } catch (IOException ioe) {}
+         return;
+      }
+      while (true) {
+         Packet out = new Packet(4, expectedNum, null, null, null, 0, packet.getInaPeer(), packet.getPort()); 
+         DatagramPacket outPacket = out.buildPacket();
+         log("sending " + PacketChecker.decipher(outPacket));
+         if (size > 0) {
+            break;
+         }
+         DatagramPacket datagram = new DatagramPacket(new byte[1500], 1500);
+         try {
+            csocket.receive(datagram);
+         }
+         catch (IOException ioe) {
+            log(ioe.toString());   
+         }
+         log("received " + PacketChecker.decipher(datagram));
+         Packet inPacket = new Packet();
+         inPacket.dissectPacket(datagram);
+         if (inPacket.getOpcode() == 5) {
+            return;
+         }
+         else if (inPacket.getOpcode() != 3 || inPacket.getNumber() != blockNum) {
+            log("bad opcode or block num");
+            Packet error = new Packet(5, 0, String.format("Bad opcode (%d != 4) or block num (%d != %d)", inPacket.getOpcode(), inPacket.getNumber(), blockNum), null, null, 0, packet.getInaPeer(), packet.getPort());
+            DatagramPacket errordgmp = error.buildPacket();
+            try {
+               csocket.send(errordgmp);
+            } catch (IOException ioe) {}
+            return;
+         }
+         size = inPacket.getDataLen();
+         try {
+         dos.write(inPacket.getData(), 0, inPacket.getDataLen());
+         dos.flush();
+         } catch (IOException ioe) {
+            log(ioe.toString());
+         }
+         expectedNum++;
+         blockNum = inPacket.getNumber();
+      } 
    }
-   
+      
    private void sendError(Packet _pkt, DatagramSocket _cSocket){
       Packet pkt = _pkt;
       DatagramSocket cSocket = _cSocket;

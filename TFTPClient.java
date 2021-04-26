@@ -234,7 +234,7 @@ public class TFTPClient extends Application implements TFTPConstants {
                   inContents.dissectPacket(inPkt);
                   
                   /*
-                   * If recived packet is not an ACK packet
+                   * If recieved packet is not an ACK packet
                    * or error code is not 0 then build
                    * and send ERROR Packet
                    */
