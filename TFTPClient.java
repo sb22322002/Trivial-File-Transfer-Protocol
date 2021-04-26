@@ -211,7 +211,7 @@ public class TFTPClient extends Application implements TFTPConstants {
             // Call decipher() method from PacketChecker.jar
             log("Client sending -- " + PacketChecker.decipher(wrqPkt));
             dgmSocket.send(outContents.buildPacket());
-            int blockNo = 1;
+            int blockNo = 0;
             int lastSize = 512;
             DataInputStream fdis = null;
             

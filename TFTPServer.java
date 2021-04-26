@@ -223,7 +223,7 @@ public class TFTPServer extends Application implements TFTPConstants {
    private void doRRQ(Packet packet, DatagramSocket csocket) {
       log("RRQ request from Client(FileName:" + packet.getS1() + " Mode:" + packet.getS2() + ")");
       //which block this is
-      int blockNum = 1;
+      int blockNum = 0;
       //the size of the read in bytes
       int size = 512;
       //dis
@@ -310,7 +310,7 @@ public class TFTPServer extends Application implements TFTPConstants {
          return;
       }
       while (true) {
-         Packet out = new Packet(4, expectedNum, filename, null, null, 0, packet.getInaPeer(), packet.getPort()); 
+         Packet out = new Packet(4, blockNum, filename, null, null, 0, packet.getInaPeer(), packet.getPort()); 
          DatagramPacket outPacket = out.buildPacket();
          log("Sending: " + PacketChecker.decipher(outPacket));
          try {
