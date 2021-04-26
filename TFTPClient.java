@@ -207,8 +207,8 @@ public class TFTPClient extends Application implements TFTPConstants {
             Packet outContents = new Packet(WRQ, UNDEF, remote, "octet", null, 0, inaServer, port);
             // Call buildPacket() method and store result
             DatagramPacket wrqPkt = outContents.buildPacket();
-            // Call decode() method from PacketChecker.jar
-            log("Client sending -- " + PacketChecker.decode(wrqPkt));
+            // Call decipher() method from PacketChecker.jar
+            log("Client sending -- " + PacketChecker.decipher(wrqPkt));
             dgmSocket.send(outContents.buildPacket());
             int blockNo = UNDEF;
             int lastSize = 512;
@@ -228,7 +228,7 @@ public class TFTPClient extends Application implements TFTPConstants {
                      return;
                   }
                   
-                  log("Client received -- " + PacketChecker.decode(inPkt));
+                  log("Client received -- " + PacketChecker.decipher(inPkt));
                   // Dissect ACK Packet
                   Packet inContents = new Packet();
                   inContents.dissectPacket(inPkt);
@@ -241,7 +241,7 @@ public class TFTPClient extends Application implements TFTPConstants {
                   if (inContents.getOpcode() != ACK || inContents.getNumber() != blockNo) {
                      Packet errContents = new Packet(ERROR, UNDEF, "Bad opcode (" + inContents.getOpcode() + "...4 expected) or block # (" + inContents.getNumber() + " -- " + blockNo + " expected) - DISCARDED", null, null, 0, inContents.getInaPeer(), inContents.getPort());
                      DatagramPacket errPkt = errContents.buildPacket();
-                     log("Client sending -- " + PacketChecker.decode(errPkt));
+                     log("Client sending -- " + PacketChecker.decipher(errPkt));
                      dgmSocket.send(errPkt);
                      return;
                   }
@@ -281,8 +281,8 @@ public class TFTPClient extends Application implements TFTPConstants {
                   outContents = new Packet(DATA, blockNo, null, null, block, actSize, inaServer, port);
                   // Call buildPacket() method and store result
                   DatagramPacket outPkt = outContents.buildPacket();
-                  // Call decode() method from PacketChecker.jar
-                  log("Client sending -- " + PacketChecker.decode(outPkt));
+                  // Call decipher() method from PacketChecker.jar
+                  log("Client sending -- " + PacketChecker.decipher(outPkt));
                   dgmSocket.send(outContents.buildPacket());
                   lastSize = actSize;
                }
@@ -386,8 +386,8 @@ public class TFTPClient extends Application implements TFTPConstants {
             Packet outContents = new Packet(RRQ, UNDEF, remote, "octet", null, 0, inaServer, TFTP_PORT);
             // Call buildPacket() method and store result
             DatagramPacket outPkt = outContents.buildPacket();
-            // Call decode() method from PacketChecker.jar
-            log("Client sending..." + PacketChecker.decode(outPkt));
+            // Call decipher() method from PacketChecker.jar
+            log("Client sending..." + PacketChecker.decipher(outPkt));
             dgmSocket.send(outContents.buildPacket());
             int lastSize = 512;
             int port = TFTP_PORT;
@@ -407,7 +407,7 @@ public class TFTPClient extends Application implements TFTPConstants {
                   return;
                }
                
-               log("Client received -- " + PacketChecker.decode(dpkt));
+               log("Client received -- " + PacketChecker.decipher(dpkt));
                Packet inContents = new Packet();
                // Dissect DATA Packet
                inContents.dissectPacket(dpkt);
@@ -424,7 +424,7 @@ public class TFTPClient extends Application implements TFTPConstants {
                if (inContents.getOpcode() != DATA || inContents.getNumber() != expectedBlock) {
                   Packet errContents = new Packet(ERROR, ILLOP, "Bad DATA packet: " + inContents.getOpcode() + " block# " + inContents.getNumber(), null, null, 0, inContents.getInaPeer(), inContents.getPort());
                   DatagramPacket errPkt = errContents.buildPacket();
-                  log("Client sending -- " + PacketChecker.decode(errPkt));
+                  log("Client sending -- " + PacketChecker.decipher(errPkt));
                   dgmSocket.send(errPkt);
                   return;
                }
@@ -442,8 +442,8 @@ public class TFTPClient extends Application implements TFTPConstants {
                outContents = new Packet(ACK, inContents.getNumber(), null, null, null, 0, inContents.getInaPeer(), inContents.getPort());
                // Call buildPacket() method and store result
                outPkt = outContents.buildPacket();
-               // Call decode() method from PacketChecker.jar
-               log("Client sending -- " + PacketChecker.decode(outPkt));
+               // Call decipher() method from PacketChecker.jar
+               log("Client sending -- " + PacketChecker.decipher(outPkt));
                dgmSocket.send(outPkt);
             }
             // Try to close DataOutputStream

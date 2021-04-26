@@ -124,9 +124,9 @@ public class Packet implements TFTPConstants {
                pkt = new DatagramPacket(baos.toByteArray(), UNDEF, (baos.toByteArray()).length, inet, port);
             }
             // General Exception...
-            catch (Exception e) {
+            catch (IOException ioe) {
                op = "RRQ/WRQ";
-               except = e;
+               except = ioe;
             }
             break;
             
@@ -147,10 +147,10 @@ public class Packet implements TFTPConstants {
                // Create DatagramPacket
                pkt = new DatagramPacket(baos.toByteArray(), UNDEF, (baos.toByteArray()).length, inet, port);
             }
-            // General Exception...
-            catch (Exception e) {
+            // IOException...
+            catch (IOException ioe) {
                op = "DATA";
-               except = e;
+               except = ioe;
             }
             break;
             
@@ -170,10 +170,10 @@ public class Packet implements TFTPConstants {
                // Create DatagramPacket
                pkt = new DatagramPacket(msg, msgLen, inet, port);
             }
-            // General Exception...
-            catch (Exception e) {
+            // IOException...
+            catch (IOException ioe) {
                op = "ACK";
-               except = e;
+               except = ioe;
             }
             break;
             
@@ -193,10 +193,10 @@ public class Packet implements TFTPConstants {
                // Create DatagramPacket
                pkt = new DatagramPacket(baos.toByteArray(), 0, (baos.toByteArray()).length, inet, port);
             }
-            // General Exception...
-            catch (Exception e) {
+            // IOException...
+            catch (IOException ioe) {
                op = "DATA";
-               except = e;
+               except = ioe;
             }
             break;
             
@@ -261,6 +261,10 @@ public class Packet implements TFTPConstants {
          }
       }
       // General Exception...
+      catch (IOException ioe) {
+         System.out.println("dissectPacket: Unexpected exception parsing packet: " + ioe);
+         System.exit(3);
+      }
       catch (Exception e) {
          System.out.println("dissectPacket: Unexpected exception parsing packet: " + e);
          System.exit(3);
@@ -293,9 +297,8 @@ public class Packet implements TFTPConstants {
       }*/
       while (true) {
          int byt = dis.readByte();
-         if (byt == 0)
-         return str; 
-         str = str + str;
+         if (byt == 0) return str; 
+         str = str + byt;
       }
    }
 }
