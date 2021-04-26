@@ -7,6 +7,7 @@ import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.text.*;
 import javafx.stage.*;
+import javafx.stage.DirectoryChooser;
 
 /**
  * TFTPServer - A Trivial File Transfer Protocol server
@@ -27,14 +28,14 @@ public class TFTPServer extends Application implements TFTPConstants {
    private Label lblStartStop = new Label("Start the server: ");
    private Button btnStartStop = new Button("Start");
    private TextArea taLog = new TextArea();
-   private ListenThread listenThread = null;
+   private ServerThread serverThread = null;
    
    // Client-Server Components
-   private DatagramSocket mainSocket = null;
+   private DatagramSocket serverSocket = null;
    
    // main
    public static void main(String[] args) {
-     launch(args);
+      launch(args);
    }
    
    // start
@@ -43,14 +44,15 @@ public class TFTPServer extends Application implements TFTPConstants {
       stage.setTitle("Instructor's TFTP Server");
       
       // Handle WindowEvent
-      stage.setOnCloseRequest(new EventHandler<WindowEvent>() {
-         public void handle(WindowEvent wevt) {
-            System.exit(0);
-         }
-      });
+      stage.setOnCloseRequest(
+         new EventHandler<WindowEvent>() {
+            public void handle(WindowEvent wevt) {
+               System.exit(0);
+            }
+         });
       
       tfFolder.setFont(Font.font("MONOSPACED",
-      FontWeight.NORMAL, tfFolder.getFont().getSize()));
+         FontWeight.NORMAL, tfFolder.getFont().getSize()));
       
       // Create new file
       File initial = new File(".");
@@ -74,18 +76,20 @@ public class TFTPServer extends Application implements TFTPConstants {
       root.getChildren().add(taLog);
       
       // Handle Start/Stop Button
-      btnStartStop.setOnAction(new EventHandler<ActionEvent>() {
-         public void handle(ActionEvent aevt) {
-            doStartStop();
-         }
-      });
+      btnStartStop.setOnAction(
+         new EventHandler<ActionEvent>() {
+            public void handle(ActionEvent aevt) {
+               doStartStop();
+            }
+         });
       
       // Handle ChooseFolder Button
-      btnChooseFolder.setOnAction(new EventHandler<ActionEvent>() {
-         public void handle(ActionEvent aevt) {
-            doChooseFolder();
-         }
-      });
+      btnChooseFolder.setOnAction(
+         new EventHandler<ActionEvent>() {
+            public void handle(ActionEvent aevt) {
+               doChooseFolder();
+            }
+         });
       
       scene = new Scene(root, 300, 400);
       stage.setScene(scene);
@@ -129,11 +133,12 @@ public class TFTPServer extends Application implements TFTPConstants {
     */
    private void log(final String message) {
       System.out.print(message + "\n");
-      Platform.runLater(new Runnable() {
-         public void run() {
-            taLog.appendText(message + "\n");
-         }
-      });
+      Platform.runLater(
+         new Runnable() {
+            public void run() {
+               taLog.appendText(message + "\n");
+            }
+         });
    }
    
    /**
@@ -141,48 +146,107 @@ public class TFTPServer extends Application implements TFTPConstants {
     * method to choose a directory
     */
    public void doChooseFolder() {
-      return;
+      DirectoryChooser chooser = new DirectoryChooser();
+      chooser.setTitle("Choose new server Directory");
+      chooser.setInitialDirectory(new File(tfFolder.getText()));
+      File selectedDirectory = chooser.showDialog(stage);
+      tfFolder.setText(selectedDirectory.getAbsolutePath());
    }
    
    /**
     * ListenThread - An inner class to keep server running
     */
-   class ListenThread extends Thread {
-      /*public void run() {
-         try {
-            log("ListenThread.run -- Listen thread started");
-            mainSocket = new DatagramSocket(69);
-            while (true) {
-               DatagramPacket dgmPacket = new DatagramPacket(new byte[1500], 1500);
-               mainSocket.receive(dgmPacket);
-               log("ListenThread.run -- Received a packet!");
-               Thread cThread = new ClientThread(dgmPacket);
-               cThread.start();
-            } 
+   class ServerThread extends Thread {
+      public void run(){
+         try{
+            serverSocket = new DatagramSocket(TFTP_PORT);
+         }catch(IOException ioe){
+            log("IOException: " + ioe + "\n");
          }
-         catch (Exception e) {
-            log("ListenThread.run -- Unexpected Exception:\n     " + e);
-            return;
-         } 
-      }*/
+         
+         while(true){
+         
+            byte[] bytePKT = new byte[MAX_PACKET];
+            DatagramPacket pkt = new DatagramPacket(bytePKT, TFTP_PORT);
+            
+            try{
+               serverSocket.receive(pkt);
+            }catch(IOException ioe){
+               return;
+            }
+            
+            ClientThread ct = new ClientThread(pkt);
+            ct.start();
+         }
+      }
    }
    
    /**
     * CleintThread - An inner class to communicate with client
     */
    class ClientThread extends Thread {
+      
+      private DatagramSocket cSocket = null;
+      private DatagramPacket firstPkt = null;
+   
+      public ClientThread(DatagramPacket _pkt){
+         firstPkt = _pkt;
+      }
+      
       public void run() {
-         return;
+         try{
+            cSocket = new DatagramSocket();
+            cSocket.setSoTimeout(1000);
+         }catch(IOException ioe){
+            log("IOException creating reply socket \n" + ioe);
+            return;
+         }
+         Packet pktFirst = new Packet();
+         pktFirst.dissectPacket(firstPkt);
+         
+         switch(pktFirst.getOpcode()){
+            case RRQ:
+               doRRQ(pktFirst, cSocket);
+               return;
+            case WRQ:
+               doWRQ(pktFirst,cSocket);
+               return;
+            default:
+               sendError(pktFirst,cSocket);
+               return;
+         }
       }
    }
    
    // Instantiate other classes or something?? //
    
-   private void doRRQ() {
+   private void doRRQ(Packet pkt, DatagramSocket cSocket) {
+      log("RRQ request from Client(FileName:" + pkt.getS1() + " Mode:" + pkt.getS2() + ")\n");
       return;
    }
    
-   private void doWRQ() {
+   private void doWRQ(Packet pkt, DatagramSocket cSocket) {
+      log("WRQ request from Client(FileName:" + pkt.getS1() + " Mode:" + pkt.getS2() + ")\n");
       return;  
+   }
+   
+   private void sendError(Packet _pkt, DatagramSocket _cSocket){
+      Packet pkt = _pkt;
+      DatagramSocket cSocket = _cSocket;
+      
+      log("Unexpected/ERROR Opcode from Client: " + pkt.getOpcode());
+      
+      if(pkt.getOpcode() == 5){
+         log("Error message from Packet: " + pkt.getS1()); 
+      }
+      
+      try{
+         Packet errorPacket = new Packet(ERROR, 4, "Unexpected opcode " + 2, null, null, 0, pkt.getInaPeer(), pkt.getPort());
+         cSocket.send(errorPacket.buildPacket());
+         return;
+      }catch(IOException ioe){
+         log("IOException creating reply socket \n" + ioe);
+         return;
+      }
    }
 }
