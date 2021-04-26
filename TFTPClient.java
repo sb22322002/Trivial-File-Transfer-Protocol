@@ -211,7 +211,7 @@ public class TFTPClient extends Application implements TFTPConstants {
             // Call decipher() method from PacketChecker.jar
             log("Client sending -- " + PacketChecker.decipher(wrqPkt));
             dgmSocket.send(outContents.buildPacket());
-            int blockNo = 1;
+            int blockNo = 0;
             int lastSize = 512;
             DataInputStream fdis = null;
             
@@ -247,6 +247,7 @@ public class TFTPClient extends Application implements TFTPConstants {
                      dgmSocket.send(errPkt);
                      return;
                   }
+                  blockNo++;
                   // Store Ip and port of Server sending ACK Packet
                   inaServer = inContents.getInaPeer();
                   port = inContents.getPort();
@@ -286,7 +287,6 @@ public class TFTPClient extends Application implements TFTPConstants {
                   log("Client sending -- " + PacketChecker.decipher(outPkt));
                   dgmSocket.send(outContents.buildPacket());
                   lastSize = actSize;
-                  blockNo++;
                   lastSize = actSize;
                }
             }
