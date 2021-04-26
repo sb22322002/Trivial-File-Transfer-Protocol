@@ -292,7 +292,7 @@ public class TFTPServer extends Application implements TFTPConstants {
    
    private void doWRQ(Packet packet, DatagramSocket csocket) {
       log("WRQ request from Client(FileName:" + packet.getS1() + " Mode:" + packet.getS2() + ")");
-      int blockNum = 1;
+      int blockNum = 0;
       int size = 512;
       int expectedNum = 1;
       DataOutputStream dos = null;
