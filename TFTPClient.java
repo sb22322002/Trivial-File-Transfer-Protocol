@@ -287,6 +287,7 @@ public class TFTPClient extends Application implements TFTPConstants {
                   dgmSocket.send(outContents.buildPacket());
                   lastSize = actSize;
                   blockNo++;
+                  lastSize = actSize;
                }
             }
             // General Exception...
@@ -415,9 +416,6 @@ public class TFTPClient extends Application implements TFTPConstants {
                inContents.dissectPacket(dpkt);
                lastSize = inContents.getDataLen();
                
-               //if (inContents.getOpcode() == ERROR)
-               //return;
-               
                /*
                 * If recived packet is not a DATA packet
                 * or error code is sent insted of expected block number
@@ -434,8 +432,8 @@ public class TFTPClient extends Application implements TFTPConstants {
                expectedBlock++;
                // Try to open local file for writing
                if (fdos == null) {
-                  log("Opening -- " + local.getAbsolutePath());
-                  fdos = new DataOutputStream(new FileOutputStream(local));
+                  log("Opening -- " + tfFolder.getText() + File.separator + remote);
+                  fdos = new DataOutputStream(new FileOutputStream(tfFolder.getText() + File.separator + remote));
                }
                // Write in byte[] data to local file
                fdos.write(inContents.getData(), 0, inContents.getDataLen());

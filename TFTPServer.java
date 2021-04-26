@@ -58,7 +58,6 @@ public class TFTPServer extends Application implements TFTPConstants {
       File initial = new File(".");
       // Set text to current directory
       tfFolder.setText(initial.getAbsolutePath());
-      tfFolder.setPrefColumnCount(tfFolder.getText().length());
       
       // ScrollPane for Choose Folder Button and TextField
       ScrollPane sp = new ScrollPane();
@@ -226,7 +225,7 @@ public class TFTPServer extends Application implements TFTPConstants {
       //which block this is
       int blockNum = 1;
       //the size of the read in bytes
-      int size = 0;
+      int size = 512;
       //dis
       DataInputStream dis = null;
       //hope you know what this is (hint: filename)
@@ -243,14 +242,15 @@ public class TFTPServer extends Application implements TFTPConstants {
          } catch (IOException ioe) {}
          return;
       }
-      while (size > 0) {
+      while (size == 512) {
          byte[] block = new byte[512];
          size = 0;
          try {
             size = dis.read(block);
          }
          catch (IOException ioe) {
-            log("IOException from reading");
+            log("IOException from reading " + ioe.toString());
+            return;
          }
          Packet outPack = new Packet(3, blockNum, null, null, block, size, packet.getInaPeer(), packet.getPort());
          DatagramPacket outPacket = outPack.buildPacket();
@@ -259,14 +259,16 @@ public class TFTPServer extends Application implements TFTPConstants {
          }
          catch (IOException ioe) {
             log("Error sending RRQ");
+            return;
          }
-         log("sending" + PacketChecker.decipher(outPacket));
+         log("sending " + PacketChecker.decipher(outPacket));
          DatagramPacket datagram = new DatagramPacket(new byte[1500], 1500);
          try {
             csocket.receive(datagram);
          }
          catch (IOException ioe) {
             log(ioe.toString());
+            return;
          }
          log("Received -- " + PacketChecker.decipher(datagram));
          Packet inPacket = new Packet();
@@ -281,12 +283,11 @@ public class TFTPServer extends Application implements TFTPConstants {
             return;
          }
          blockNum++;
-         try {
+      }
+      try {
             dis.close();
             csocket.close();
-         } catch (IOException ioe) {}
-      }
-      
+      } catch (IOException ioe) {}  
    }
    
    private void doWRQ(Packet packet, DatagramSocket csocket) {

@@ -21,14 +21,16 @@ public class PacketChecker implements TFTPConstants {
          result = String.format("Opcode (%d)", packet.getOpcode()); 
       }
       if (packet.getNumber() > -1 && packet.getNumber() < 8) {
-         switch (packet.getNumber()) {
+         switch (packet.getOpcode()) {
             case 1:
             case 2:
-               String temp = String.format("\nFilename <%s> Mode <%s> Cannot access server file", packet.getS1(), packet.getS2());
-               result = temp + result;
+               String temp = String.format("\nFilename <%s> Mode <%s>", packet.getS1(), packet.getS2());
+               result = result + temp;
                return result;
+            case 3:
             case 4:
-               result = result + "Block#: " + packet.getNumber();
+               result = result + "\nBlock#: (" + packet.getNumber() + ")";
+               return result;
          }
       }
       return result;
