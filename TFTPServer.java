@@ -41,7 +41,7 @@ public class TFTPServer extends Application implements TFTPConstants {
    // start
    public void start(Stage _stage) {
       stage = _stage;
-      stage.setTitle("Instructor's TFTP Server");
+      stage.setTitle("GHS-Squad's TFTP Server");
       
       // Handle WindowEvent
       stage.setOnCloseRequest(
@@ -74,6 +74,7 @@ public class TFTPServer extends Application implements TFTPConstants {
       // TextArea Log
       taLog.setPrefRowCount(50);
       root.getChildren().add(taLog);
+      taLog.setEditable(false);
       
       // Handle Start/Stop Button
       btnStartStop.setOnAction(
@@ -109,8 +110,8 @@ public class TFTPServer extends Application implements TFTPConstants {
          btnStartStop.setStyle("-fx-background-color: #ff0000;");
          lblStartStop.setText("Stop the server: ");
          
-         //Thread listenThread = new ListenThread();
-         //listenThread.start();
+         Thread serverThread = new ServerThread();
+         serverThread.start();
          
          tfFolder.setDisable(true);
          btnChooseFolder.setDisable(true);
@@ -289,12 +290,12 @@ public class TFTPServer extends Application implements TFTPConstants {
    }
    
    private void doWRQ(Packet packet, DatagramSocket csocket) {
-      log("WRQ request from Client(FileName:" + packet.getS1() + " Mode:" + packet.getS2() + ")\n");
+      log("WRQ request from Client(FileName:" + packet.getS1() + " Mode:" + packet.getS2() + ")");
       int blockNum = 0;
       int size = 0;
       int expectedNum = 1;
       DataOutputStream dos = null;
-      String filename = packet.getS1();
+      String filename = tfFolder.getText() + File.separator + packet.getS1();
       try {
          dos = new DataOutputStream(new FileOutputStream(new File(filename)));
       } 
@@ -308,9 +309,9 @@ public class TFTPServer extends Application implements TFTPConstants {
          return;
       }
       while (true) {
-         Packet out = new Packet(4, expectedNum, null, null, null, 0, packet.getInaPeer(), packet.getPort()); 
+         Packet out = new Packet(4, blockNum, filename, null, null, 0, packet.getInaPeer(), packet.getPort()); 
          DatagramPacket outPacket = out.buildPacket();
-         log("sending " + PacketChecker.decipher(outPacket));
+         log("Sending: " + PacketChecker.decipher(outPacket));
          if (size > 0) {
             break;
          }
@@ -318,10 +319,15 @@ public class TFTPServer extends Application implements TFTPConstants {
          try {
             csocket.receive(datagram);
          }
-         catch (IOException ioe) {
-            log(ioe.toString());   
+         catch (SocketTimeoutException ste) {
+            log("Upload timed out waiting for Data");   
+            return;
          }
-         log("received " + PacketChecker.decipher(datagram));
+         catch (IOException ioe) {
+            log(ioe.toString());
+            return;
+         }
+         log("received - " + PacketChecker.decipher(datagram));
          Packet inPacket = new Packet();
          inPacket.dissectPacket(datagram);
          if (inPacket.getOpcode() == 5) {

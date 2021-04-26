@@ -75,6 +75,7 @@ public class TFTPClient extends Application implements TFTPConstants {
       // TextArea Log
       taLog.setPrefRowCount(50);
       root.getChildren().addAll(new Label("Log:"), taLog);
+      taLog.setEditable(false);
       
       // Handle ChooseFolder Button
       btnChooseFolder.setOnAction(new EventHandler<ActionEvent>() {
@@ -210,7 +211,7 @@ public class TFTPClient extends Application implements TFTPConstants {
             // Call decipher() method from PacketChecker.jar
             log("Client sending -- " + PacketChecker.decipher(wrqPkt));
             dgmSocket.send(outContents.buildPacket());
-            int blockNo = UNDEF;
+            int blockNo = 1;
             int lastSize = 512;
             DataInputStream fdis = null;
             
