@@ -230,8 +230,6 @@ public class TFTPServer extends Application implements TFTPConstants {
       }
    }
    
-   // Instantiate other classes or something?? //
-   
    private void doRRQ(Packet packet, DatagramSocket csocket) {
       log("RRQ request from Client(FileName:" + packet.getS1() + " Mode:" + packet.getS2() + ")");
       //which block this is
@@ -277,7 +275,7 @@ public class TFTPServer extends Application implements TFTPConstants {
             log("Error sending RRQ");
             return;
          }
-         log("sending " + PacketChecker.decipher(outPacket));
+         log("recieved - " + PacketChecker.decipher(outPacket));
          //create datagrampacket to hold incoming one
          DatagramPacket datagram = new DatagramPacket(new byte[1500], 1500);
          try {
@@ -288,7 +286,7 @@ public class TFTPServer extends Application implements TFTPConstants {
             return;
          }
          //receive/decipher datagram packet
-         log("Received -- " + PacketChecker.decipher(datagram));
+         log("Sending: " + PacketChecker.decipher(datagram));
          Packet inPacket = new Packet();
          inPacket.dissectPacket(datagram);
          //make sure packet is ACK and right block Num
@@ -306,7 +304,9 @@ public class TFTPServer extends Application implements TFTPConstants {
       try {
             dis.close();
             csocket.close();
-      } catch (IOException ioe) {}  
+      } catch (IOException ioe) {}
+      
+      log("Download Complete...");
    }
    
    private void doWRQ(Packet packet, DatagramSocket csocket) {
@@ -386,6 +386,7 @@ public class TFTPServer extends Application implements TFTPConstants {
          }
          blockNum++;
       } 
+      log("Upload Complete...");
    }
       
    private void sendError(Packet _pkt, DatagramSocket _cSocket){
