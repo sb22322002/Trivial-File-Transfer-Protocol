@@ -16,7 +16,9 @@ Server : ClientThread - Giuseppe
 
 Server : FileChooser - Giuseppe
 
-Server : doRRQ - 
+Server : doRRQ - H
+
+Server : doWRQ - H
 
 Client : log() - Seth
 
@@ -26,8 +28,8 @@ Client : Download - Seth
 
 Client : Upload - Seth
 
-Packet : buildPacket() - 
+Packet : buildPacket() - H
 
-Packet : dissectPacket() - 
+Packet : dissectPacket() - H/Seth
 
-Packet : readToString() - 
+Packet : readToString() - H
