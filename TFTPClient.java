@@ -21,6 +21,9 @@ public class TFTPClient extends Application implements TFTPConstants {
    private Scene scene;
    private VBox root = new VBox(8);
    
+   // Client-Server Components
+   private DatagramSocket dgmSocket;
+   
    // GUI Components
    private TextField tfServer = new TextField("localhost");
    private TextField tfFolder = new TextField();
@@ -28,9 +31,6 @@ public class TFTPClient extends Application implements TFTPConstants {
    private Button btnDownload = new Button("Download");
    private Button btnUpload = new Button("Upload");
    private TextArea taLog = new TextArea();
-   
-   // Client-Server Components
-   private DatagramSocket dgmSocket;
    
    /** main */
    public static void main(String[] args) {
@@ -41,13 +41,6 @@ public class TFTPClient extends Application implements TFTPConstants {
    public void start(Stage _stage) {
       stage = _stage;
       stage.setTitle("GHS Squad TFTP Client");
-      
-      // Handle WindowEvent
-      stage.setOnCloseRequest(new EventHandler<WindowEvent>() {
-         public void handle(WindowEvent wevt) {
-            System.exit(0);
-         }
-      });
       
       HBox hbServer = new HBox(10);
       tfServer.setPrefColumnCount(30);
@@ -68,9 +61,9 @@ public class TFTPClient extends Application implements TFTPConstants {
       root.getChildren().addAll(btnChooseFolder, sp);
       
       // HBox for Upload and Download Buttons
-      HBox hbBtn = new HBox(10);
-      hbBtn.getChildren().addAll(btnUpload, btnDownload);
-      root.getChildren().add(hbBtn);
+      HBox hboxBtn = new HBox(10);
+      hboxBtn.getChildren().addAll(btnUpload, btnDownload);
+      root.getChildren().add(hboxBtn);
       
       // TextArea Log
       taLog.setPrefRowCount(50);
@@ -98,26 +91,18 @@ public class TFTPClient extends Application implements TFTPConstants {
          }
       });
       
+      // Handle WindowEvent
+      stage.setOnCloseRequest(new EventHandler<WindowEvent>() {
+         public void handle(WindowEvent wevt) {
+            System.exit(0);
+         }
+      });
+      
       scene = new Scene(root, 500, 600);
       stage.setScene(scene);
       stage.setX(10);
       stage.setY(75);
       stage.show();
-   }
-   
-   /**
-    * log()
-    * method to append client taLog
-    * @param   String      message
-    */
-   private void log(final String message) {
-      System.out.print(message + "\n");
-      
-      Platform.runLater(new Runnable() {
-         public void run() {
-            taLog.appendText(message + "\n");
-         }
-      });
    }
    
    /**
@@ -145,13 +130,13 @@ public class TFTPClient extends Application implements TFTPConstants {
       chooser.setInitialDirectory(new File(tfFolder.getText()));
       chooser.setTitle("Select the Local File to Upload");
       // Create File to store chosen local file for upload
-      File localFile = chooser.showOpenDialog(stage);
+      File locFile = chooser.showOpenDialog(stage);
       
       // Return nothing if File is not chosen
-      if (localFile == null)
+      if (locFile == null)
       return;
       
-      System.out.println(localFile.getAbsolutePath());
+      System.out.println(locFile.getAbsolutePath());
       TextInputDialog dialog = new TextInputDialog();
       
       // Prompt user for remote file name
@@ -161,10 +146,10 @@ public class TFTPClient extends Application implements TFTPConstants {
       dialog.showAndWait();
       
       // Store remote file name
-      String remoteName = dialog.getEditor().getText();
-      System.out.println(remoteName);
+      String remFileName = dialog.getEditor().getText();
+      System.out.println(remFileName);
       // Create UploadThread and start it
-      Thread ulThread = new UploadThread(remoteName, localFile);
+      Thread ulThread = new UploadThread(remFileName, locFile);
       ulThread.start();
    }
    
@@ -178,21 +163,21 @@ public class TFTPClient extends Application implements TFTPConstants {
       private DatagramSocket dgmSocket;
       private String remote;
       private File local;
-      InetAddress inaServer = null;
+      InetAddress inetServer = null;
       int port = TFTP_PORT;
       
       /**
        * UploadThread() - Parameterized constructor for UploadThread
-       * @param   String      _remoteName
-       * @param   File        _localFile
+       * @param   String      _remFileName
+       * @param   File        _locFile
        */
-      public UploadThread(String _remoteName, File _localFile) {
-         remote = _remoteName;
-         local = _localFile;
+      public UploadThread(String _remFileName, File _locFile) {
+         remote = _remFileName;
+         local = _locFile;
          try {
             dgmSocket = new DatagramSocket(0);
-            dgmSocket.setSoTimeout(1000);
-            inaServer = InetAddress.getByName(tfServer.getText());
+            dgmSocket.setSoTimeout(2000);
+            inetServer = InetAddress.getByName(tfServer.getText());
          }
          catch (Exception e) {
             log("Problem  starting upload: " + e);
@@ -204,16 +189,17 @@ public class TFTPClient extends Application implements TFTPConstants {
       public void run() {
          log("Starting upload " + local.getName() + " --> " + remote);
          try {
-            // Create new WRQ Packet
-            Packet outContents = new Packet(WRQ, UNDEF, remote, "octet", null, 0, inaServer, port);
-            // Call buildPacket() method and store result
-            DatagramPacket wrqPkt = outContents.buildPacket();
-            // Call decipher() method from PacketChecker.jar
-            log("Client sending -- " + PacketChecker.decipher(wrqPkt));
-            dgmSocket.send(outContents.buildPacket());
-            int blockNo = 0;
+            int blockNum = 0;
             int lastSize = 512;
             DataInputStream fdis = null;
+         
+            // Create new WRQ Packet
+            Packet outPacket = new Packet(WRQ, UNDEF, remote, "octet", null, 0, inetServer, port);
+            // Call buildPacket() method and store result
+            DatagramPacket wrqPkt = outPacket.buildPacket();
+            // Call decipher() method from the PacketChecker class
+            log("Client sending -- " + PacketChecker.decipher(wrqPkt));
+            dgmSocket.send(outPacket.buildPacket());
             
             try {
                while (true) {
@@ -231,32 +217,32 @@ public class TFTPClient extends Application implements TFTPConstants {
                   
                   log("Client received -- " + PacketChecker.decipher(inPkt));
                   // Dissect ACK Packet
-                  Packet inContents = new Packet();
-                  inContents.dissectPacket(inPkt);
+                  Packet inPacket = new Packet();
+                  inPacket.dissectPacket(inPkt);
                   
                   /*
                    * If recieved packet is not an ACK packet
-                   * or error code is not 0 then build
+                   * or number code is not blockNum then build
                    * and send ERROR Packet
                    */
-                  if (inContents.getOpcode() != ACK || inContents.getNumber() != blockNo) {
-                     log("Bad opcode (" + inContents.getOpcode() + "...4 expected) or block # (" + inContents.getNumber() + " -- " + blockNo + " expected) - DISCARDED");
-                     Packet errContents = new Packet(ERROR, UNDEF, "Bad opcode (" + inContents.getOpcode() + "...4 expected) or block # (" + inContents.getNumber() + " -- " + blockNo + " expected) - DISCARDED", null, null, 0, inContents.getInaPeer(), inContents.getPort());
-                     DatagramPacket errPkt = errContents.buildPacket();
+                  if (inPacket.getOpcode() != ACK || inPacket.getNumber() != blockNum) {
+                     log("Bad opcode (" + inPacket.getOpcode() + "...4 expected) or block # (" + inPacket.getNumber() + " -- " + blockNum + " expected) - DISCARDED");
+                     Packet errPacket = new Packet(ERROR, UNDEF, "Bad opcode (" + inPacket.getOpcode() + "...4 expected) or block # (" + inPacket.getNumber() + " -- " + blockNum + " expected) - DISCARDED", null, null, 0, inPacket.getInaPeer(), inPacket.getPort());
+                     DatagramPacket errPkt = errPacket.buildPacket();
                      log("Client sending -- " + PacketChecker.decipher(errPkt));
                      dgmSocket.send(errPkt);
                      return;
                   }
-                  blockNo++;
+                  blockNum++;
                   // Store Ip and port of Server sending ACK Packet
-                  inaServer = inContents.getInaPeer();
-                  port = inContents.getPort();
+                  inetServer = inPacket.getInaPeer();
+                  port = inPacket.getPort();
                   if (lastSize < 512)
                   break;
                    
                   if (fdis == null) {
-                     String fullName = local.getAbsolutePath();
-                     log("doWRQ -- Opening " + fullName);
+                     String fileName = local.getAbsolutePath();
+                     log("doWRQ -- Opening " + fileName);
                      // Try to open file for reading
                      try {
                         fdis = new DataInputStream(new FileInputStream(local));
@@ -264,7 +250,7 @@ public class TFTPClient extends Application implements TFTPConstants {
                      // IOException...
                      catch (IOException ioe) {
                         log("doWRQ -- Cannot open file -- " + local.getName());
-                        Packet contents_e = new Packet(ERROR, ACCESS, "Cannot open file " + local.getName(), null, null, 0, inaServer, port);
+                        Packet contents_e = new Packet(ERROR, ACCESS, "Cannot open file " + local.getName(), null, null, 0, inetServer, port);
                         dgmSocket.send(contents_e.buildPacket());
                         return;
                      } 
@@ -280,12 +266,12 @@ public class TFTPClient extends Application implements TFTPConstants {
                      actSize = 0;
                   }
                   // Create new DATA Packet
-                  outContents = new Packet(DATA, blockNo, null, null, block, actSize, inaServer, port);
+                  outPacket = new Packet(DATA, blockNum, null, null, block, actSize, inetServer, port);
                   // Call buildPacket() method and store result
-                  DatagramPacket outPkt = outContents.buildPacket();
+                  DatagramPacket outPkt = outPacket.buildPacket();
                   // Call decipher() method from PacketChecker.jar
                   log("Client sending -- " + PacketChecker.decipher(outPkt));
-                  dgmSocket.send(outContents.buildPacket());
+                  dgmSocket.send(outPacket.buildPacket());
                   lastSize = actSize;
                   lastSize = actSize;
                }
@@ -327,23 +313,23 @@ public class TFTPClient extends Application implements TFTPConstants {
       dialog.setX(75);
       dialog.showAndWait();
       // Store remote file name
-      String remoteName = dialog.getEditor().getText();
+      String remFileName = dialog.getEditor().getText();
       
       // Create FileChooser
       FileChooser chooser = new FileChooser();
       chooser.setInitialDirectory(new File(tfFolder.getText()));
       chooser.setTitle("Select/Enter the Name of the File for Saving the Download");
       // Create File to store chosen local file for upload
-      File localFile = chooser.showSaveDialog(stage);
+      File locFile = chooser.showSaveDialog(stage);
       
       // Return nothing if File is not chosen
-      if (localFile == null) {
+      if (locFile == null) {
          log("Canceled!");
          return;
       } 
       
       // Create DownloadThread and start it
-      Thread dlThread = new DownloadThread(remoteName, localFile);
+      Thread dlThread = new DownloadThread(remFileName, locFile);
       dlThread.start();
    }
    
@@ -357,22 +343,22 @@ public class TFTPClient extends Application implements TFTPConstants {
       private DatagramSocket dgmSocket;
       private String remote;
       private File local;
-      InetAddress inaServer = null;
+      InetAddress inetServer = null;
       int port = TFTP_PORT;
       
       /**
        * DownloadThread() - Parameterized constructor for DownloadThread
-       * @param   String      _remoteName
-       * @param   File        _localFile
+       * @param   String      _remFileName
+       * @param   File        _locFile
        */
-      public DownloadThread(String _remoteName, File _localFile) {
-         remote = _remoteName;
-         local = _localFile;
+      public DownloadThread(String _remFileName, File _locFile) {
+         remote = _remFileName;
+         local = _locFile;
          // Try to store new DatagramSocket
          try {
             dgmSocket = new DatagramSocket();
-            dgmSocket.setSoTimeout(1000);
-            inaServer = InetAddress.getByName(tfServer.getText());
+            dgmSocket.setSoTimeout(2000);
+            inetServer = InetAddress.getByName(tfServer.getText());
          }
          // General Exception...
          catch (Exception e) {
@@ -386,12 +372,12 @@ public class TFTPClient extends Application implements TFTPConstants {
          log("Starting download " + remote + " --> " + local.getName());
          try {
             // Create new RRQ Packet
-            Packet outContents = new Packet(RRQ, UNDEF, remote, "octet", null, 0, inaServer, TFTP_PORT);
+            Packet outPacket = new Packet(RRQ, UNDEF, remote, "octet", null, 0, inetServer, TFTP_PORT);
             // Call buildPacket() method and store result
-            DatagramPacket outPkt = outContents.buildPacket();
-            // Call decipher() method from PacketChecker.jar
+            DatagramPacket outPkt = outPacket.buildPacket();
+            // Call decipher() method from the PacketChecker class
             log("Client sending..." + PacketChecker.decipher(outPkt));
-            dgmSocket.send(outContents.buildPacket());
+            dgmSocket.send(outPacket.buildPacket());
             int lastSize = 512;
             int port = TFTP_PORT;
             DataOutputStream fdos = null;
@@ -411,19 +397,19 @@ public class TFTPClient extends Application implements TFTPConstants {
                }
                
                log("Client received -- " + PacketChecker.decipher(dpkt));
-               Packet inContents = new Packet();
+               Packet inPacket = new Packet();
                // Dissect DATA Packet
-               inContents.dissectPacket(dpkt);
-               lastSize = inContents.getDataLen();
+               inPacket.dissectPacket(dpkt);
+               lastSize = inPacket.getDataLen();
                
                /*
                 * If recived packet is not a DATA packet
                 * or error code is sent insted of expected block number
                 * then build and send ERROR Packet
                 */
-               if (inContents.getOpcode() != DATA || inContents.getNumber() != expectedBlock) {
-                  Packet errContents = new Packet(ERROR, ILLOP, "Bad DATA packet: " + inContents.getOpcode() + " block# " + inContents.getNumber(), null, null, 0, inContents.getInaPeer(), inContents.getPort());
-                  DatagramPacket errPkt = errContents.buildPacket();
+               if (inPacket.getOpcode() != DATA || inPacket.getNumber() != expectedBlock) {
+                  Packet errPacket = new Packet(ERROR, ILLOP, "Bad DATA packet: " + inPacket.getOpcode() + " block# " + inPacket.getNumber(), null, null, 0, inPacket.getInaPeer(), inPacket.getPort());
+                  DatagramPacket errPkt = errPacket.buildPacket();
                   log("Client sending -- " + PacketChecker.decipher(errPkt));
                   dgmSocket.send(errPkt);
                   return;
@@ -436,13 +422,13 @@ public class TFTPClient extends Application implements TFTPConstants {
                   fdos = new DataOutputStream(new FileOutputStream(tfFolder.getText() + File.separator + remote));
                }
                // Write in byte[] data to local file
-               fdos.write(inContents.getData(), 0, inContents.getDataLen());
+               fdos.write(inPacket.getData(), 0, inPacket.getDataLen());
                fdos.flush();
                // Create new ACK Packet
-               outContents = new Packet(ACK, inContents.getNumber(), null, null, null, 0, inContents.getInaPeer(), inContents.getPort());
+               outPacket = new Packet(ACK, inPacket.getNumber(), null, null, null, 0, inPacket.getInaPeer(), inPacket.getPort());
                // Call buildPacket() method and store result
-               outPkt = outContents.buildPacket();
-               // Call decipher() method from PacketChecker.jar
+               outPkt = outPacket.buildPacket();
+               // Call decipher() method from the PacketChecker class
                log("Client sending -- " + PacketChecker.decipher(outPkt));
                dgmSocket.send(outPkt);
             }
@@ -458,5 +444,20 @@ public class TFTPClient extends Application implements TFTPConstants {
          
          log("Downloaded " + remote + " --> " + local.getName());
       }
+   }
+   
+   /**
+    * log()
+    * method to append client taLog
+    * @param   String      message
+    */
+   private void log(final String message) {
+      System.out.print(message + "\n");
+      
+      Platform.runLater(new Runnable() {
+         public void run() {
+            taLog.appendText(message + "\n");
+         }
+      });
    }
 }
