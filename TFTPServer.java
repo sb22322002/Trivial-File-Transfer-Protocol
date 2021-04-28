@@ -245,6 +245,7 @@ public class TFTPServer extends Application implements TFTPConstants {
       try {
          dis = new DataInputStream(new FileInputStream(new File(filename)));
       } 
+      //send file not found packet
       catch (FileNotFoundException fnfe) {
          log("File Not Found");
          Packet error = new Packet(5, 2, "File not found " + packet.getS1(), null, null, 0, packet.getInaPeer(), packet.getPort());
@@ -254,9 +255,11 @@ public class TFTPServer extends Application implements TFTPConstants {
          } catch (IOException ioe) {}
          return;
       }
+      //keep going while the datagram packet is 512 bytes long since that's our max packet size atm
       while (size == 512) {
          byte[] block = new byte[512];
          size = 0;
+         //read 512 bytes of file
          try {
             size = dis.read(block);
          }
@@ -264,6 +267,7 @@ public class TFTPServer extends Application implements TFTPConstants {
             log("IOException from reading " + ioe.toString());
             return;
          }
+         //send data packet
          Packet outPack = new Packet(3, blockNum, null, null, block, size, packet.getInaPeer(), packet.getPort());
          DatagramPacket outPacket = outPack.buildPacket();
          try {
@@ -274,6 +278,7 @@ public class TFTPServer extends Application implements TFTPConstants {
             return;
          }
          log("sending " + PacketChecker.decipher(outPacket));
+         //create datagrampacket to hold incoming one
          DatagramPacket datagram = new DatagramPacket(new byte[1500], 1500);
          try {
             csocket.receive(datagram);
@@ -282,9 +287,11 @@ public class TFTPServer extends Application implements TFTPConstants {
             log(ioe.toString());
             return;
          }
+         //receive/decipher datagram packet
          log("Received -- " + PacketChecker.decipher(datagram));
          Packet inPacket = new Packet();
          inPacket.dissectPacket(datagram);
+         //make sure packet is ACK and right block Num
          if (inPacket.getOpcode() != 4 || blockNum != inPacket.getNumber()) {
             log("bad opcode or block num");
             Packet error = new Packet(5, 0, String.format("Bad opcode (%d != 4) or block num (%d != %d)", inPacket.getOpcode(), inPacket.getNumber(), blockNum), null, null, 0, packet.getInaPeer(), packet.getPort());
@@ -304,13 +311,17 @@ public class TFTPServer extends Application implements TFTPConstants {
    
    private void doWRQ(Packet packet, DatagramSocket csocket) {
       log("WRQ request from Client(FileName:" + packet.getS1() + " Mode:" + packet.getS2() + ")");
+      //current block num
       int blockNum = 0;
+      //current size of packet
       int size = 512;
       DataOutputStream dos = null;
+      //you won't believe what this is
       String filename = tfFolder.getText() + File.separator + packet.getS1();
       try {
          dos = new DataOutputStream(new FileOutputStream(new File(filename)));
       } 
+      //send FNFE error packet
       catch (FileNotFoundException fnfe) {
          log("File Not Found");
          Packet error = new Packet(5, 2, "File not found " + packet.getS1(), null, null, 0, packet.getInaPeer(), packet.getPort());
@@ -320,16 +331,20 @@ public class TFTPServer extends Application implements TFTPConstants {
          } catch (IOException ioe) {}
          return;
       }
+      //until the end of time repeat this
       while (true) {
+         //make ACK packet and send
          Packet out = new Packet(4, blockNum, filename, null, null, 0, packet.getInaPeer(), packet.getPort()); 
          DatagramPacket outPacket = out.buildPacket();
          log("Sending: " + PacketChecker.decipher(outPacket));
          try {
          csocket.send(outPacket);
          } catch (IOException ioe) {}
+         //if the size is less than 512 that means the last packet was already received so leave loop
          if (size < 512) {
             break;
          }
+         //get ready for new packet
          DatagramPacket datagram = new DatagramPacket(new byte[1500], 1500);
          try {
             csocket.receive(datagram);
@@ -346,8 +361,10 @@ public class TFTPServer extends Application implements TFTPConstants {
          Packet inPacket = new Packet();
          inPacket.dissectPacket(datagram);
          if (inPacket.getOpcode() == 5) {
+            log("Error code: " + inPacket.getNumber());
             return;
          }
+         //if its not the DATA packet or its the wrong block them error out
          else if (inPacket.getOpcode() != 3 || inPacket.getNumber() != blockNum + 1) {
             log(String.format("Bad opcode (%d != 3) or block num (%d != %d)", inPacket.getOpcode(), inPacket.getNumber(), blockNum + 1));
             Packet error = new Packet(5, 0, String.format("Bad opcode (%d != 4) or block num (%d != %d)", inPacket.getOpcode(), inPacket.getNumber(), blockNum), null, null, 0, packet.getInaPeer(), packet.getPort());
@@ -357,10 +374,13 @@ public class TFTPServer extends Application implements TFTPConstants {
             } catch (IOException ioe) {}
             return;
          }
+         //get the size (better be 512 if theres more)
          size = inPacket.getDataLen();
          try {
-         dos.write(inPacket.getData(), 0, inPacket.getDataLen());
-         dos.flush();
+            //write to file
+            dos.write(inPacket.getData(), 0, inPacket.getDataLen());
+            //don't forget this or it won't work, no clue why though
+            dos.flush();
          } catch (IOException ioe) {
             log(ioe.toString());
          }
