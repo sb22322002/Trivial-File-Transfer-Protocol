@@ -58,6 +58,7 @@ public class TFTPServer extends Application implements TFTPConstants {
       File initial = new File(".");
       // Set text to current directory
       tfFolder.setText(initial.getAbsolutePath());
+      tfFolder.setPrefColumnCount(tfFolder.getText().length());
       
       // ScrollPane for Choose Folder Button and TextField
       ScrollPane sp = new ScrollPane();
@@ -117,6 +118,8 @@ public class TFTPServer extends Application implements TFTPConstants {
       }
       // if Button is "Stop" switch to "Start"
       else {
+         stopServer();
+         
          btnStartStop.setText("Start");
          btnStartStop.setStyle("-fx-background-color: #00ff00;");
          lblStartStop.setText("Start the server: ");
@@ -151,6 +154,7 @@ public class TFTPServer extends Application implements TFTPConstants {
       chooser.setInitialDirectory(new File(tfFolder.getText()));
       File selectedDirectory = chooser.showDialog(stage);
       tfFolder.setText(selectedDirectory.getAbsolutePath());
+      tfFolder.setPrefColumnCount(tfFolder.getText().length());
    }
    
    /**
@@ -178,6 +182,14 @@ public class TFTPServer extends Application implements TFTPConstants {
             ClientThread ct = new ClientThread(pkt);
             ct.start();
          }
+      }
+   }
+   
+   public void stopServer(){
+      try{
+         serverSocket.close();
+      }catch(Exception e){
+         log("Exception when closing Server DatagramSocket: " + e + "\n");
       }
    }
    
