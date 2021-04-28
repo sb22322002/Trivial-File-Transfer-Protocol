@@ -198,7 +198,7 @@ public class TFTPClient extends Application implements TFTPConstants {
             // Call buildPacket() method and store result
             DatagramPacket wrqPkt = outPacket.buildPacket();
             // Call decipher() method from the PacketChecker class
-            log("Client sending -- " + PacketChecker.decipher(wrqPkt));
+            log("Sending: " + PacketChecker.decipher(wrqPkt));
             dgmSocket.send(outPacket.buildPacket());
             
             try {
@@ -215,7 +215,7 @@ public class TFTPClient extends Application implements TFTPConstants {
                      return;
                   }
                   
-                  log("Client received -- " + PacketChecker.decipher(inPkt));
+                  log("received - " + PacketChecker.decipher(inPkt));
                   // Dissect ACK Packet
                   Packet inPacket = new Packet();
                   inPacket.dissectPacket(inPkt);
@@ -229,7 +229,7 @@ public class TFTPClient extends Application implements TFTPConstants {
                      log("Bad opcode (" + inPacket.getOpcode() + "...4 expected) or block # (" + inPacket.getNumber() + " -- " + blockNum + " expected) - DISCARDED");
                      Packet errPacket = new Packet(ERROR, UNDEF, "Bad opcode (" + inPacket.getOpcode() + "...4 expected) or block # (" + inPacket.getNumber() + " -- " + blockNum + " expected) - DISCARDED", null, null, 0, inPacket.getInaPeer(), inPacket.getPort());
                      DatagramPacket errPkt = errPacket.buildPacket();
-                     log("Client sending -- " + PacketChecker.decipher(errPkt));
+                     log("Sending: " + PacketChecker.decipher(errPkt));
                      dgmSocket.send(errPkt);
                      return;
                   }
@@ -242,14 +242,14 @@ public class TFTPClient extends Application implements TFTPConstants {
                    
                   if (fdis == null) {
                      String fileName = local.getAbsolutePath();
-                     log("doWRQ -- Opening " + fileName);
+                     log("Sending WRQ - Opening " + fileName);
                      // Try to open file for reading
                      try {
                         fdis = new DataInputStream(new FileInputStream(local));
                      }
                      // IOException...
                      catch (IOException ioe) {
-                        log("doWRQ -- Cannot open file -- " + local.getName());
+                        log("Sending WRQ - Cannot open file -- " + local.getName());
                         Packet contents_e = new Packet(ERROR, ACCESS, "Cannot open file " + local.getName(), null, null, 0, inetServer, port);
                         dgmSocket.send(contents_e.buildPacket());
                         return;
@@ -270,7 +270,7 @@ public class TFTPClient extends Application implements TFTPConstants {
                   // Call buildPacket() method and store result
                   DatagramPacket outPkt = outPacket.buildPacket();
                   // Call decipher() method from PacketChecker.jar
-                  log("Client sending -- " + PacketChecker.decipher(outPkt));
+                  log("Sending: " + PacketChecker.decipher(outPkt));
                   dgmSocket.send(outPacket.buildPacket());
                   lastSize = actSize;
                   lastSize = actSize;
@@ -278,13 +278,13 @@ public class TFTPClient extends Application implements TFTPConstants {
             }
             // General Exception...
             catch (Exception e) {
-               log("doWRQ -- Exception during WRQ: " + e);
+               log("Exception during WRQ: " + e);
                return;
             }
          }
          // General Exception...
          catch (Exception e) {
-            log("doWRQ -- Exception during WRQ: " + e);
+            log("Exception during WRQ: " + e);
             return;
          }
          
@@ -376,7 +376,7 @@ public class TFTPClient extends Application implements TFTPConstants {
             // Call buildPacket() method and store result
             DatagramPacket outPkt = outPacket.buildPacket();
             // Call decipher() method from the PacketChecker class
-            log("Client sending..." + PacketChecker.decipher(outPkt));
+            log("received - " + PacketChecker.decipher(outPkt));
             dgmSocket.send(outPacket.buildPacket());
             int lastSize = 512;
             int port = TFTP_PORT;
@@ -396,7 +396,7 @@ public class TFTPClient extends Application implements TFTPConstants {
                   return;
                }
                
-               log("Client received -- " + PacketChecker.decipher(dpkt));
+               log("Sending: " + PacketChecker.decipher(dpkt));
                Packet inPacket = new Packet();
                // Dissect DATA Packet
                inPacket.dissectPacket(dpkt);
@@ -410,7 +410,7 @@ public class TFTPClient extends Application implements TFTPConstants {
                if (inPacket.getOpcode() != DATA || inPacket.getNumber() != expectedBlock) {
                   Packet errPacket = new Packet(ERROR, ILLOP, "Bad DATA packet: " + inPacket.getOpcode() + " block# " + inPacket.getNumber(), null, null, 0, inPacket.getInaPeer(), inPacket.getPort());
                   DatagramPacket errPkt = errPacket.buildPacket();
-                  log("Client sending -- " + PacketChecker.decipher(errPkt));
+                  log("received - " + PacketChecker.decipher(errPkt));
                   dgmSocket.send(errPkt);
                   return;
                }
@@ -429,7 +429,7 @@ public class TFTPClient extends Application implements TFTPConstants {
                // Call buildPacket() method and store result
                outPkt = outPacket.buildPacket();
                // Call decipher() method from the PacketChecker class
-               log("Client sending -- " + PacketChecker.decipher(outPkt));
+               log("received -  " + PacketChecker.decipher(outPkt));
                dgmSocket.send(outPkt);
             }
             // Try to close DataOutputStream
