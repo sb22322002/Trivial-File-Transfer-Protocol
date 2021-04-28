@@ -306,7 +306,6 @@ public class TFTPServer extends Application implements TFTPConstants {
       log("WRQ request from Client(FileName:" + packet.getS1() + " Mode:" + packet.getS2() + ")");
       int blockNum = 0;
       int size = 512;
-      int expectedNum = 1;
       DataOutputStream dos = null;
       String filename = tfFolder.getText() + File.separator + packet.getS1();
       try {
@@ -349,8 +348,8 @@ public class TFTPServer extends Application implements TFTPConstants {
          if (inPacket.getOpcode() == 5) {
             return;
          }
-         else if (inPacket.getOpcode() != 3 || inPacket.getNumber() != expectedNum) {
-            log(String.format("Bad opcode (%d != 3) or block num (%d != %d)", inPacket.getOpcode(), inPacket.getNumber(), expectedNum));
+         else if (inPacket.getOpcode() != 3 || inPacket.getNumber() != blockNum + 1) {
+            log(String.format("Bad opcode (%d != 3) or block num (%d != %d)", inPacket.getOpcode(), inPacket.getNumber(), blockNum + 1));
             Packet error = new Packet(5, 0, String.format("Bad opcode (%d != 4) or block num (%d != %d)", inPacket.getOpcode(), inPacket.getNumber(), blockNum), null, null, 0, packet.getInaPeer(), packet.getPort());
             DatagramPacket errordgmp = error.buildPacket();
             try {
@@ -365,7 +364,6 @@ public class TFTPServer extends Application implements TFTPConstants {
          } catch (IOException ioe) {
             log(ioe.toString());
          }
-         expectedNum++;
          blockNum++;
       } 
    }
