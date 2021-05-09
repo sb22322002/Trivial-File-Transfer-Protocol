@@ -292,17 +292,6 @@ public class Packet implements TFTPConstants {
     */
    private static String readToString(DataInputStream dis) throws Exception {
       String str = "";
-      
-      // Infinate loop to read data byte by byte
-      /*for(int i=0; ; i++) {
-         bytes[i] = dis.readByte();
-         
-         // Break infinate loop
-         if (bytes[i] == 0)
-         return str;
-          
-         str = new String(bytes);
-      }*/
       while (true) {
          int byt = dis.readByte();
          if (byt == 0) {
